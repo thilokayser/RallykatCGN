@@ -3,10 +3,12 @@ Racing for Everyone
 
 
 Hier ist eine strukturierte README.md Datei, die genau auf den Funktionen der Version 26 (Complete Edition) basiert. Du kannst diesen Text direkt als Dokumentation für dein Projekt nutzen.
-🏆 Bike Battle - Elite Race Director (V26)
+
+
+## 🏆 Bike Battle - Elite Race Director (V26)
 
 Der Bike Battle Race Director ist ein professionelles, browserbasiertes Tool zur Verwaltung von K.O.-Turnieren (Brackets). Es wurde speziell für Renn-Events entwickelt und bietet ein einzigartiges Dual-Bracket-System mit integrierter "Redemption"-Mechanik, Liga-Ranking und Wildcard-Verwaltung.
-✨ Hauptfunktionen
+### ✨ Hauptfunktionen
 
     Dual Bracket System:
 
@@ -26,7 +28,7 @@ Der Bike Battle Race Director ist ein professionelles, browserbasiertes Tool zur
 
     Dark Mode UI: Hochwertiges "Glassmorphism"-Design, optimiert für gut lesbare Darstellung auf Monitoren.
 
-🚀 Schnellstart Anleitung
+## 🚀 Schnellstart Anleitung
 1. Event erstellen
 
     Gib oben links einen Namen für das Event ein (z.B. "Race #1").
@@ -59,7 +61,7 @@ Ein Fehler ist passiert?
 
     Klicke darauf, um das Ergebnis zu löschen. Der fälschlicherweise weitergekommene Fahrer wird aus der nächsten Runde entfernt.
 
-⚙️ Die Spiel-Logik (Ruleset)
+## ⚙️ Die Spiel-Logik (Ruleset)
 Der "Redemption Drop"
 
 Das System nutzt eine faire "Double Chance" Mechanik:
@@ -93,7 +95,7 @@ Die Sidebar berechnet die Saison-Punkte automatisch:
 
     1 Punkt: Teilnahme (jeder Fahrer).
 
-🃏 Wildcards & Manuelle Eingriffe
+### 🃏 Wildcards & Manuelle Eingriffe
 
 In der Sidebar befindet sich der Wildcard Pool.
 
@@ -109,7 +111,7 @@ In der Sidebar befindet sich der Wildcard Pool.
 
         Wichtig: Dies funktioniert nur, wenn das Match noch nicht entschieden ist.
 
-💾 Speichern & Laden
+### 💾 Speichern & Laden
 
     Auto-Save: Das Tool speichert jede Änderung sofort im Browser (localStorage). Beim Neuladen der Seite ist alles noch da.
 
@@ -119,7 +121,7 @@ In der Sidebar befindet sich der Wildcard Pool.
 
     RESET: Löscht alle Daten und setzt die Saison zurück (Vorsicht!).
 
-⌨️ Tipps & Tricks
+## ⌨️ Tipps & Tricks
 
     Sidebar ausblenden: Klicke auf das ☰ Symbol oben links, um mehr Platz für das Bracket zu haben.
 
