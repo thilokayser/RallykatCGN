@@ -1,1108 +1,313 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
-    <head>
-        <meta charset="UTF-8" />
-        <title>Bike Battle - Race Director V23 (Final Fix)</title>
-        <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-        <link
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap"
-            rel="stylesheet"
-        />
-        <style>
-            :root {
-                --bg: #09090b;
-                --glass: rgba(20, 20, 25, 0.9);
-                --border: rgba(255, 255, 255, 0.1);
-                --gold: #fcd303;
-                --gold-dim: rgba(252, 211, 3, 0.1);
-                --red: #ff4757;
-                --red-dim: rgba(255, 71, 87, 0.1);
-                --text: #ffffff;
-                --text-dim: #a1a1aa;
-                --sidebar-w: 320px;
-            }
+<head>
+    <meta charset="UTF-8">
+    <title>Bike Battle - Elite Race Director V25</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #09090b; --glass: rgba(20, 20, 25, 0.95); 
+            --border: rgba(255, 255, 255, 0.1);
+            --gold: #fcd303; --gold-dim: rgba(252, 211, 3, 0.1);
+            --red: #ff4757; --red-dim: rgba(255, 71, 87, 0.1);
+            --text: #ffffff; --text-dim: #a1a1aa;
+            --sidebar-w: 320px;
+        }
 
-            * {
-                box-sizing: border-box;
-                outline: none;
-                user-select: none;
-            }
-            body {
-                font-family: "Inter", sans-serif;
-                background: var(--bg);
-                color: var(--text);
-                margin: 0;
-                display: flex;
-                height: 100vh;
-                overflow: hidden;
-                background-image: radial-gradient(
-                    circle at 50% 0%,
-                    #1f1f25 0%,
-                    #09090b 80%
-                );
-            }
+        * { box-sizing: border-box; outline: none; user-select: none; }
+        body { 
+            font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); 
+            margin: 0; display: flex; height: 100vh; overflow: hidden;
+            background-image: radial-gradient(circle at 50% 0%, #1f1f25 0%, #09090b 80%);
+        }
 
-            /* --- SIDEBAR --- */
-            .sidebar {
-                width: var(--sidebar-w);
-                background: var(--glass);
-                backdrop-filter: blur(20px);
-                border-right: 1px solid var(--border);
-                display: flex;
-                flex-direction: column;
-                z-index: 50;
-                transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                flex-shrink: 0;
-            }
-            .sidebar.hidden {
-                margin-left: calc(var(--sidebar-w) * -1);
-            }
+        /* SIDEBAR */
+        .sidebar { 
+            width: var(--sidebar-w); background: var(--glass); backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 50;
+            transition: margin-left 0.3s ease; flex-shrink: 0;
+        }
+        .sidebar.hidden { margin-left: calc(var(--sidebar-w) * -1); }
+        .sidebar-header { padding: 25px; text-align: center; font-weight: 800; color: var(--gold); border-bottom: 1px solid var(--border); letter-spacing: 2px; text-transform: uppercase; }
+        .league-container { flex: 1; overflow-y: auto; padding: 0; }
+        .league-table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
+        .league-table td { padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.02); }
 
-            .sidebar-header {
-                padding: 25px;
-                text-align: center;
-                font-weight: 800;
-                color: var(--gold);
-                border-bottom: 1px solid var(--border);
-                letter-spacing: 2px;
-            }
+        /* MAIN */
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .top-nav { height: 60px; padding: 0 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); }
+        .controls-bar { padding: 15px 30px; display: flex; gap: 15px; background: rgba(255,255,255,0.02); align-items: center; border-bottom: 1px solid var(--border); }
+        .input-dark { background: #000; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 6px; font-family: inherit; }
+        
+        .btn { border: none; padding: 10px 20px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.8em; text-transform: uppercase; transition: 0.2s; }
+        .btn-gold { background: var(--gold); color: #000; }
+        .btn-sub { background: #27272a; color: #fff; border: 1px solid #3f3f46; }
 
-            .league-container {
-                flex: 1;
-                overflow-y: auto;
-                padding: 0;
-            }
-            .league-table {
-                width: 100%;
-                border-collapse: collapse;
-            }
-            .league-table tr {
-                border-bottom: 1px solid rgba(255, 255, 255, 0.02);
-            }
-            .league-table td {
-                padding: 12px 15px;
-                font-size: 0.85em;
-            }
-            .rank-1 {
-                color: #ffd700;
-                font-weight: bold;
-            }
-            .rank-2 {
-                color: #c0c0c0;
-            }
-            .rank-3 {
-                color: #cd7f32;
-            }
+        .tabs-row { display: flex; gap: 8px; padding: 10px 30px; overflow-x: auto; background: #0c0c0e; border-bottom: 1px solid var(--border); }
+        .tab { padding: 6px 15px; font-size: 0.75em; color: var(--text-dim); cursor: pointer; border-radius: 20px; background: rgba(255,255,255,0.05); white-space: nowrap; }
+        .tab.active { background: #27272a; color: var(--gold); border: 1px solid #3f3f46; }
 
-            .system-controls {
-                padding: 20px;
-                border-top: 1px solid var(--border);
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 10px;
-            }
+        /* BRACKET */
+        .bracket-scroll { flex: 1; overflow: auto; padding: 50px; scroll-behavior: smooth; }
+        .bracket-container { display: flex; gap: 60px; margin-bottom: 100px; }
+        .round { display: flex; flex-direction: column; justify-content: space-around; min-width: 260px; }
+        .match-box { background: #18181b; border: 1px solid var(--border); border-radius: 12px; padding: 12px; position: relative; display: flex; flex-direction: column; gap: 8px; margin: 20px 0; }
+        .match-box.next-match { border-color: var(--gold); box-shadow: 0 0 15px var(--gold-dim); }
+        
+        .player-row { display: flex; align-items: center; gap: 8px; background: #27272a; padding: 8px 10px; border-radius: 6px; height: 40px; }
+        .p-name { flex: 1; font-weight: 600; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+        
+        .btn-win { width: 26px; height: 26px; border: none; border-radius: 4px; cursor: pointer; background: #444; color: #fff; font-size: 14px; }
+        .btn-win:hover { background: var(--gold); color: #000; }
+        .btn-reset { position: absolute; top: -10px; right: -10px; background: #222; color: #fff; border: 1px solid #555; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; font-size: 14px; }
 
-            /* --- MAIN --- */
-            .main-content {
-                flex-grow: 1;
-                display: flex;
-                flex-direction: column;
-                overflow: hidden;
-                position: relative;
-            }
+        .is-loser { opacity: 0.3; filter: grayscale(1); }
+        .is-dnf .p-name { text-decoration: line-through; color: var(--red); }
 
-            .top-nav {
-                height: 60px;
-                padding: 0 20px;
-                border-bottom: 1px solid var(--border);
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                background: rgba(0, 0, 0, 0.2);
-            }
-            .toggle-btn {
-                background: transparent;
-                color: #fff;
-                font-size: 1.5em;
-                cursor: pointer;
-                border: none;
-                padding: 5px;
-            }
-            .toggle-btn:hover {
-                color: var(--gold);
-            }
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 200; align-items: center; justify-content: center; }
+        .glass-card { background: #18181b; border: 1px solid var(--border); padding: 40px; border-radius: 20px; width: 500px; max-width: 90%; text-align: center; }
 
-            .controls-bar {
-                padding: 15px 30px;
-                display: flex;
-                gap: 15px;
-                background: rgba(255, 255, 255, 0.02);
-                align-items: center;
-                border-bottom: 1px solid var(--border);
-            }
-            .input-dark {
-                background: #000;
-                border: 1px solid #333;
-                color: #fff;
-                padding: 10px;
-                border-radius: 6px;
-                font-family: inherit;
-            }
+        #redemption-list div { padding: 8px; border-bottom: 1px solid #333; cursor: pointer; font-size: 0.85em; }
+        #redemption-list div:hover { color: var(--gold); background: rgba(255,255,255,0.02); }
+    </style>
+</head>
+<body>
 
-            .btn {
-                border: none;
-                padding: 10px 20px;
-                border-radius: 6px;
-                font-weight: 700;
-                cursor: pointer;
-                font-size: 0.8em;
-                transition: 0.1s;
-                text-transform: uppercase;
-            }
-            .btn:hover {
-                filter: brightness(1.1);
-                transform: translateY(-1px);
-            }
-            .btn-gold {
-                background: var(--gold);
-                color: #000;
-            }
-            .btn-sub {
-                background: #27272a;
-                color: #fff;
-                border: 1px solid #3f3f46;
-            }
+    <div id="podium-overlay" class="overlay">
+        <div class="glass-card">
+            <h1 style="color:var(--gold); margin-bottom: 30px;">🏆 PODIUM</h1>
+            <div id="p1" style="margin:10px; padding:20px; border:2px solid var(--gold); color:var(--gold); font-weight: 800; font-size: 1.4em;">🥇 --</div>
+            <div id="p2" style="margin:10px; padding:15px; border:1px solid #888; color:#fff;">🥈 --</div>
+            <div id="p3" style="margin:10px; padding:15px; border:1px solid #cd7f32; color:#cd7f32;">🥉 --</div>
+            <button class="btn btn-sub" onclick="document.getElementById('podium-overlay').style.display='none'" style="margin-top:20px; width: 100%;">SCHLIESSEN</button>
+        </div>
+    </div>
 
-            /* --- TABS --- */
-            .tabs-row {
-                display: flex;
-                gap: 8px;
-                padding: 10px 30px;
-                overflow-x: auto;
-                background: #0c0c0e;
-                border-bottom: 1px solid var(--border);
-            }
-            .tab {
-                padding: 6px 15px;
-                font-size: 0.75em;
-                color: var(--text-dim);
-                cursor: pointer;
-                border-radius: 20px;
-                border: 1px solid transparent;
-                white-space: nowrap;
-                background: rgba(255, 255, 255, 0.05);
-            }
-            .tab.active {
-                background: #27272a;
-                color: var(--gold);
-                border-color: #3f3f46;
-                font-weight: bold;
-            }
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">BIKE BATTLE LIGA</div>
+        <div class="league-container"><table class="league-table"><tbody id="league-body"></tbody></table></div>
+        <div style="padding:15px; border-top:1px solid #222; background:rgba(0,0,0,0.3);">
+            <div style="font-size:0.7em; font-weight:900; color:var(--red); margin-bottom:10px; text-transform: uppercase;">Wildcard Pool</div>
+            <div id="redemption-list"></div>
+            <div id="wildcard-info" style="margin-top:10px; color:var(--gold); font-size:0.75em; font-weight: bold;"></div>
+        </div>
+        <div style="padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button class="btn btn-sub" onclick="exportData()" style="font-size: 0.7em;">SAVE</button>
+            <button class="btn btn-sub" onclick="fullReset()" style="font-size: 0.7em; color: var(--red);">RESET</button>
+        </div>
+    </div>
 
-            /* --- BRACKET ENGINE --- */
-            .bracket-scroll {
-                flex: 1;
-                overflow: auto;
-                padding: 50px;
-                scroll-behavior: smooth;
-            }
-
-            .bracket-section-title {
-                font-size: 1.2em;
-                font-weight: 900;
-                margin-bottom: 25px;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                text-transform: uppercase;
-                letter-spacing: 1px;
-            }
-            .title-gold {
-                color: var(--gold);
-                text-shadow: 0 0 20px var(--gold-dim);
-            }
-            .title-red {
-                color: var(--red);
-                text-shadow: 0 0 20px var(--red-dim);
-                margin-top: 80px;
-                padding-top: 40px;
-                border-top: 1px dashed #333;
-            }
-
-            .bracket-container {
-                display: flex;
-                gap: 60px;
-            }
-            .round {
-                display: flex;
-                flex-direction: column;
-                justify-content: space-around;
-                min-width: 260px;
-            }
-
-            .match-box {
-                background: #18181b;
-                border: 1px solid var(--border);
-                border-radius: 12px;
-                padding: 12px;
-                position: relative;
-                z-index: 1;
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-                margin: 20px 0;
-                transition: 0.2s;
-            }
-            /* Connectors */
-            .round:not(:last-child) .match-box::after {
-                content: "";
-                position: absolute;
-                right: -60px;
-                top: 50%;
-                width: 60px;
-                height: 2px;
-                background: #333;
-                z-index: -1;
-            }
-
-            .match-box.gold-active {
-                border-color: var(--gold);
-                box-shadow: 0 0 15px var(--gold-dim);
-            }
-            .match-box.red-active {
-                border-color: var(--red);
-                box-shadow: 0 0 15px var(--red-dim);
-            }
-
-            .player-row {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                background: #27272a;
-                padding: 8px 10px;
-                border-radius: 6px;
-                position: relative;
-                overflow: hidden;
-                height: 38px;
-            }
-            .p-name {
-                flex: 1;
-                font-weight: 600;
-                font-size: 0.9em;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                cursor: pointer;
-            }
-
-            .btn-win {
-                width: 24px;
-                height: 24px;
-                border: none;
-                border-radius: 4px;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background: #444;
-                color: #fff;
-                font-size: 10px;
-            }
-            .btn-win:hover {
-                background: #fff;
-                color: #000;
-            }
-
-            .btn-dnf {
-                background: transparent;
-                color: var(--red);
-                border: 1px solid var(--red);
-                width: 24px;
-                height: 24px;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 9px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-            .btn-dnf.active {
-                background: var(--red);
-                color: white;
-            }
-
-            /* RESET BUTTON (UNDO) */
-            .btn-reset {
-                position: absolute;
-                top: -10px;
-                right: -10px;
-                background: #222;
-                color: #fff;
-                border: 1px solid #555;
-                width: 24px;
-                height: 24px;
-                border-radius: 50%;
-                font-size: 14px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                cursor: pointer;
-                z-index: 10;
-            }
-            .btn-reset:hover {
-                background: var(--red);
-                border-color: var(--red);
-            }
-
-            .is-dnf .p-name {
-                text-decoration: line-through;
-                opacity: 0.5;
-                color: var(--red);
-            }
-            .is-loser {
-                opacity: 0.4;
-                filter: grayscale(1);
-            }
-
-            /* WILDCARD MODE */
-            .wildcard-active .bracket-scroll {
-                cursor: crosshair;
-            }
-            .wildcard-active .player-row {
-                border: 1px dashed var(--gold);
-                animation: pulse 1s infinite;
-            }
-            @keyframes pulse {
-                0% {
-                    opacity: 1;
-                }
-                50% {
-                    opacity: 0.5;
-                }
-                100% {
-                    opacity: 1;
-                }
-            }
-
-            /* OVERLAYS */
-            .overlay {
-                display: none;
-                position: fixed;
-                inset: 0;
-                background: rgba(0, 0, 0, 0.9);
-                z-index: 200;
-                align-items: center;
-                justify-content: center;
-            }
-            .glass-card {
-                background: #18181b;
-                border: 1px solid var(--border);
-                padding: 40px;
-                border-radius: 20px;
-                width: 500px;
-                max-width: 90%;
-            }
-            .doc-step {
-                margin-bottom: 15px;
-                border-left: 3px solid var(--gold);
-                padding-left: 15px;
-            }
-            .doc-step h4 {
-                color: var(--gold);
-                margin: 0 0 5px 0;
-                text-transform: uppercase;
-                font-size: 0.8em;
-            }
-            .doc-step p {
-                color: var(--text-dim);
-                margin: 0;
-                font-size: 0.9em;
-            }
-
-            .redemption-pool-item {
-                font-size: 0.85em;
-                padding: 4px;
-                border-bottom: 1px solid #333;
-                cursor: pointer;
-                color: #aaa;
-            }
-            .redemption-pool-item:hover {
-                color: var(--gold);
-            }
-        </style>
-    </head>
-    <body>
-        <div id="doc-overlay" class="overlay">
-            <div class="glass-card">
-                <h2 style="color: var(--gold); margin-top: 0">
-                    📖 RACE DIRECTOR GUIDE
-                </h2>
-                <div class="doc-step">
-                    <h4>1. Start</h4>
-                    <p>Namen in die Box kopieren, "RANDOMIZE" klicken.</p>
-                </div>
-                <div class="doc-step">
-                    <h4>2. Match</h4>
-                    <p>
-                        <b>➔</b> = Sieger. <b>X</b> = DNF. <br /><b>↺</b> =
-                        Reset (setzt Ergebnis zurück).
-                    </p>
-                </div>
-                <div class="doc-step">
-                    <h4>3. Drop Down</h4>
-                    <p>
-                        Verlierer der Runde 0 fallen automatisch ins Redemption
-                        Bracket.
-                    </p>
-                </div>
-                <div class="doc-step">
-                    <h4>4. Wildcard</h4>
-                    <p>
-                        Namen im "Wildcard Pool" klicken, dann leeres Feld im
-                        Bracket wählen.
-                    </p>
-                </div>
-                <button
-                    class="btn btn-gold"
-                    style="width: 100%"
-                    onclick="closeOverlay('doc-overlay')"
-                >
-                    OK
-                </button>
+    <div class="main-content">
+        <div class="top-nav">
+            <div style="display:flex; align-items:center; gap:15px;">
+                <button class="btn btn-sub" style="padding: 5px 12px;" onclick="toggleSidebar()">☰</button>
+                <div style="font-weight:900; color:var(--gold); letter-spacing: 1px;">RACE DIRECTOR PRO</div>
             </div>
+            <button class="btn btn-sub" onclick="alert('ANLEITUNG:\n1. Namen eingeben (einer pro Zeile)\n2. RANDOMIZE klicken\n3. ➔ klicken für Sieg\n4. Doppelklick Name zum Editieren')">?</button>
         </div>
 
-        <div id="podium-overlay" class="overlay">
-            <div class="glass-card" style="text-align: center">
-                <h1 style="color: var(--gold); margin-bottom: 20px">VICTORY</h1>
-                <div
-                    id="p1"
-                    style="
-                        margin: 10px;
-                        padding: 20px;
-                        border: 2px solid var(--gold);
-                        font-size: 1.5em;
-                        font-weight: bold;
-                        color: var(--gold);
-                    "
-                >
-                    🥇 --
-                </div>
-                <div
-                    id="p2"
-                    style="
-                        margin: 10px;
-                        padding: 15px;
-                        border: 1px solid #888;
-                        color: #aaa;
-                    "
-                >
-                    🥈 --
-                </div>
-                <div
-                    id="p3"
-                    style="
-                        margin: 10px;
-                        padding: 15px;
-                        border: 1px solid #cd7f32;
-                        color: #cd7f32;
-                    "
-                >
-                    🥉 --
-                </div>
-                <button
-                    class="btn btn-sub"
-                    onclick="closeOverlay('podium-overlay')"
-                    style="margin-top: 20px"
-                >
-                    CLOSE
-                </button>
-            </div>
+        <div class="controls-bar">
+            <input type="text" id="eventName" class="input-dark" placeholder="Race Name..." style="width:180px;">
+            <button class="btn btn-gold" onclick="addNewEvent()">NEW TAB</button>
+            <textarea id="playerList" class="input-dark" style="flex:1; height:40px; resize:none;" placeholder="Fahrerliste hier einfügen..."></textarea>
+            <button class="btn btn-sub" style="background:#333;" onclick="randomizePlayers()">🎲 RANDOMIZE</button>
         </div>
 
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">LEAGUE STANDINGS</div>
-            <div class="league-container">
-                <table class="league-table">
-                    <tbody id="league-body"></tbody>
-                </table>
-            </div>
+        <div id="event-tabs" class="tabs-row"></div>
 
-            <div
-                style="
-                    padding: 15px;
-                    border-top: 1px solid #222;
-                    background: rgba(0, 0, 0, 0.3);
-                "
-            >
-                <div
-                    style="
-                        font-size: 0.7em;
-                        font-weight: 900;
-                        color: var(--red);
-                        margin-bottom: 10px;
-                    "
-                >
-                    WILDCARD POOL
-                </div>
-                <div
-                    id="redemption-list"
-                    style="
-                        max-height: 150px;
-                        overflow-y: auto;
-                        display: flex;
-                        flex-direction: column;
-                        gap: 5px;
-                    "
-                ></div>
-                <div
-                    id="wildcard-info"
-                    style="
-                        margin-top: 5px;
-                        color: var(--gold);
-                        font-size: 0.75em;
-                        min-height: 1em;
-                    "
-                ></div>
+        <div class="bracket-scroll">
+            <div style="color:var(--gold); font-weight:900; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px;">Championship Bracket</div>
+            <div id="main-bracket-container" class="bracket-container"></div>
+            
+            <div id="red-section" style="display:none; margin-top:80px; border-top:1px dashed #333; padding-top:40px;">
+                <div style="color:var(--red); font-weight:900; margin-bottom:20px; text-transform: uppercase; letter-spacing: 1px;">Redemption Round</div>
+                <div id="sub-bracket-container" class="bracket-container"></div>
             </div>
-
-            <div class="system-controls">
-                <button class="btn btn-sub" onclick="exportData()">
-                    💾 SAVE
-                </button>
-                <button
-                    class="btn btn-sub"
-                    onclick="document.getElementById('importFile').click()"
-                >
-                    📂 LOAD
-                </button>
-                <input
-                    type="file"
-                    id="importFile"
-                    style="display: none"
-                    onchange="importData(this)"
-                />
-                <button
-                    class="btn btn-sub"
-                    style="
-                        grid-column: span 2;
-                        color: var(--red);
-                        border-color: var(--red);
-                    "
-                    onclick="fullReset()"
-                >
-                    ⚠ RESET ALL
-                </button>
-            </div>
+            <div id="finish-area" style="text-align:center; padding:60px;"></div>
         </div>
+    </div>
 
-        <div class="main-content">
-            <div class="top-nav">
-                <div style="display: flex; align-items: center; gap: 15px">
-                    <button class="toggle-btn" onclick="toggleSidebar()">
-                        ☰
-                    </button>
-                    <div
-                        style="
-                            font-weight: 900;
-                            font-size: 1.2em;
-                            color: var(--gold);
-                        "
-                    >
-                        BIKE BATTLE
-                        <span style="color: #fff; opacity: 0.5">PRO</span>
-                    </div>
-                </div>
-                <button
-                    class="btn btn-sub"
-                    onclick="openOverlay('doc-overlay')"
-                    style="padding: 5px 12px; font-size: 1.2em"
-                >
-                    ?
-                </button>
-            </div>
+    <script>
+        let events = {}; let currentId = null; let wildcard = null;
+        const KEY = 'bike_battle_v25_ultra';
 
-            <div class="controls-bar">
-                <input
-                    type="text"
-                    id="eventName"
-                    class="input-dark"
-                    placeholder="Event Name..."
-                    style="width: 150px"
-                />
-                <button class="btn btn-gold" onclick="addNewEvent()">
-                    NEW TAB
-                </button>
-                <textarea
-                    id="playerList"
-                    class="input-dark"
-                    style="flex: 1; height: 38px; resize: none"
-                    placeholder="Fahrerliste..."
-                ></textarea>
-                <button
-                    class="btn btn-sub"
-                    style="background: #222; border: 1px solid #444"
-                    onclick="randomizePlayers()"
-                >
-                    🎲 RANDOMIZE
-                </button>
-            </div>
+        window.onload = () => {
+            const s = localStorage.getItem(KEY);
+            if(s) { events = JSON.parse(s); if(Object.keys(events).length) loadEvent(Object.keys(events)[0]); }
+        };
 
-            <div id="event-tabs" class="tabs-row"></div>
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('hidden'); }
+        function save() { localStorage.setItem(KEY, JSON.stringify(events)); updateLeague(); }
 
-            <div class="bracket-scroll">
-                <div class="bracket-section-title title-gold">
-                    <span>🏆 CHAMPIONSHIP</span>
-                </div>
-                <div
-                    id="main-bracket-container"
-                    class="bracket-container"
-                ></div>
+        function loadEvent(id) {
+            currentId = id;
+            renderAll();
+        }
 
-                <div id="red-section" style="display: none">
-                    <div class="bracket-section-title title-red">
-                        <span>🔥 REDEMPTION BRACKET</span>
-                    </div>
-                    <div
-                        id="sub-bracket-container"
-                        class="bracket-container"
-                    ></div>
-                </div>
-            </div>
-        </div>
+        function renderAll() {
+            renderTabs();
+            const ev = events[currentId];
+            if(!ev) return;
+            renderBracket('main', ev.count, document.getElementById('main-bracket-container'));
+            const hasSub = Object.keys(ev.names).some(k => k.startsWith('sub_'));
+            document.getElementById('red-section').style.display = hasSub ? 'block' : 'none';
+            if(hasSub) renderBracket('sub', ev.count / 2, document.getElementById('sub-bracket-container'));
+            renderRedemptionList();
+            updateLeague();
+            document.getElementById('finish-area').innerHTML = ev.mainWinner ? `<button class="btn btn-gold" style="padding: 20px 50px; font-size: 1.2em;" onclick="showPodium()">🏆 PODIUM ANZEIGEN</button>` : "";
+        }
 
-        <script>
-            // --- CORE LOGIC ---
-            let events = {};
-            let currentId = null;
-            let wildcard = null;
-            const STORAGE_KEY = "bike_battle_v23_clean";
+        function renderTabs() {
+            document.getElementById('event-tabs').innerHTML = Object.keys(events).map(id => `
+                <div class="tab ${id === currentId ? 'active' : ''}" onclick="loadEvent('${id}')">${events[id].name.toUpperCase()}</div>
+            `).join('');
+        }
 
-            window.onload = () => {
-                const s = localStorage.getItem(STORAGE_KEY);
-                if (s) {
-                    events = JSON.parse(s);
-                    if (Object.keys(events).length)
-                        loadEvent(Object.keys(events)[0]);
-                }
-                updateLeague();
-            };
+        function addNewEvent() {
+            const size = prompt("Größe (4, 8, 16)?", "8"); if (!size) return;
+            const id = "ev_" + Date.now();
+            events[id] = { name: document.getElementById('eventName').value || "Race", count: parseInt(size), names: {}, status: {}, mainWinner: null, subWinner: null, finalist: null, third: null };
+            save(); loadEvent(id);
+        }
 
-            function toggleSidebar() {
-                document.getElementById("sidebar").classList.toggle("hidden");
-            }
-            function openOverlay(id) {
-                document.getElementById(id).style.display = "flex";
-            }
-            function closeOverlay(id) {
-                document.getElementById(id).style.display = "none";
-            }
-            function save() {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+        function randomizePlayers() {
+            const raw = document.getElementById('playerList').value.split('\n').map(n => n.trim()).filter(n => n);
+            if (raw.length < 2) return alert("Min. 2 Fahrer!");
+            
+            if (!currentId || Object.keys(events[currentId].names).length > 0) {
+                const bSize = Math.pow(2, Math.ceil(Math.log2(raw.length)));
+                currentId = "ev_" + Date.now();
+                events[currentId] = { name: document.getElementById('eventName').value || "Race", count: bSize, names: {}, status: {}, mainWinner: null, subWinner: null, finalist: null, third: null };
             }
 
-            function loadEvent(id) {
-                currentId = id;
-                renderTabs();
-                renderAllBrackets();
-                renderRedemptionList();
-            }
+            const ev = events[currentId];
+            raw.sort(() => Math.random() - 0.5).forEach((n, i) => { 
+                ev.names[`main_r0_m${Math.floor(i/2)}_p${i%2}`] = n;
+            });
+            document.getElementById('playerList').value = "";
+            save(); renderAll();
+        }
 
-            function renderTabs() {
-                document.getElementById("event-tabs").innerHTML = Object.keys(
-                    events,
-                )
-                    .map(
-                        (id) => `
-                <div class="tab ${id === currentId ? "active" : ""}" onclick="loadEvent('${id}')" oncontextmenu="deleteEvent('${id}'); return false;">
-                    ${events[id].name.toUpperCase()}
-                </div>
-            `,
-                    )
-                    .join("");
-            }
+        function renderBracket(type, size, container) {
+            container.innerHTML = "";
+            const ev = events[currentId];
+            let rounds = Math.ceil(Math.log2(size));
+            let matches = size / 2;
+            let nextFound = false;
 
-            function addNewEvent() {
-                const size = prompt("Größe (4, 8, 16)?", "8");
-                if (!size) return;
-                const id = "ev_" + Date.now();
-                events[id] = {
-                    name: document.getElementById("eventName").value || "Event",
-                    count: parseInt(size),
-                    names: {},
-                    status: {},
-                    mainWinner: null,
-                    subWinner: null,
-                    finalist: null,
-                };
-                save();
-                loadEvent(id);
-            }
+            for(let r=0; r<rounds; r++) {
+                const roundDiv = document.createElement('div');
+                roundDiv.className = 'round';
+                for(let m=0; m<matches; m++) {
+                    const id0 = `${type}_r${r}_m${m}_p0`, id1 = `${type}_r${r}_m${m}_p1`;
+                    const isNext = !nextFound && ev.names[id0] && ev.names[id1] && !ev.status[id0] && !ev.status[id1] && !ev.mainWinner;
+                    if(isNext) nextFound = true;
+                    const done = ev.status[id0] || ev.status[id1];
 
-            function randomizePlayers() {
-                const raw = document
-                    .getElementById("playerList")
-                    .value.split("\n")
-                    .map((n) => n.trim())
-                    .filter((n) => n);
-                if (raw.length < 4) {
-                    alert("Min. 4 Fahrer!");
-                    return;
-                }
-
-                // Check if current event is empty to avoid duplicates
-                let id = currentId;
-                const ev = events[currentId];
-
-                if (!ev || Object.keys(ev.names).length > 0) {
-                    // Create new if current is full or null
-                    id = "ev_" + Date.now();
-                    const bSize = Math.pow(2, Math.ceil(Math.log2(raw.length)));
-                    events[id] = {
-                        name:
-                            document.getElementById("eventName").value ||
-                            "Race " + (Object.keys(events).length + 1),
-                        count: bSize,
-                        names: {},
-                        status: {},
-                        mainWinner: null,
-                        subWinner: null,
-                        finalist: null,
-                    };
-                }
-
-                raw.sort(() => Math.random() - 0.5).forEach((n, i) => {
-                    events[id].names[`main_r0_m${Math.floor(i / 2)}p${i % 2}`] =
-                        n;
-                    if (n === "BYE")
-                        setTimeout(
-                            () =>
-                                advance(
-                                    id,
-                                    "main",
-                                    0,
-                                    Math.floor(i / 2),
-                                    i % 2 === 0 ? 1 : 0,
-                                    true,
-                                ),
-                            50,
-                        );
-                });
-                save();
-                loadEvent(id);
-            }
-
-            function renderAllBrackets() {
-                const ev = events[currentId];
-                if (!ev) return;
-                document.body.classList.toggle("wildcard-active", !!wildcard);
-
-                renderBracket(
-                    "main",
-                    ev.count,
-                    document.getElementById("main-bracket-container"),
-                );
-                const hasSub = Object.keys(ev.names).some((k) =>
-                    k.startsWith("sub_"),
-                );
-                document.getElementById("red-section").style.display = hasSub
-                    ? "block"
-                    : "none";
-                if (hasSub)
-                    renderBracket(
-                        "sub",
-                        ev.count / 2,
-                        document.getElementById("sub-bracket-container"),
-                    );
-            }
-
-            function renderBracket(type, size, container) {
-                const ev = events[currentId];
-                container.innerHTML = "";
-                let rounds = Math.ceil(Math.log2(size));
-                let matches = size / 2;
-                let nextFound = false;
-
-                for (let r = 0; r < rounds; r++) {
-                    const roundDiv = document.createElement("div");
-                    roundDiv.className = "round";
-                    for (let m = 0; m < matches; m++) {
-                        const id0 = `${type}_r${r}_m${m}_p0`;
-                        const id1 = `${type}_r${r}_m${m}_p1`;
-
-                        const isNext =
-                            !nextFound &&
-                            ev.names[id0] &&
-                            ev.names[id1] &&
-                            !ev.status[id0] &&
-                            !ev.status[id1];
-                        if (isNext) nextFound = true;
-
-                        const isDone = ev.status[id0] || ev.status[id1];
-
-                        let html = `<div class="match-box ${isNext ? (type === "main" ? "gold-active" : "red-active") : ""}">`;
-                        if (isDone)
-                            html += `<button class="btn-reset" onclick="resetMatch('${type}',${r},${m})">↺</button>`;
-
-                        html += [0, 1]
-                            .map((p) => {
-                                const id = `${type}_r${r}_m${m}_p${p}`;
-                                const name = ev.names[id] || "--";
-                                const stat = ev.status[id];
-                                const showControls =
-                                    name !== "--" && name !== "BYE" && !isDone;
-                                return `
-                        <div class="player-row ${stat === "dnf" ? "is-dnf" : ""} ${stat === "loss" ? "is-loser" : ""}">
-                            <span class="p-name" onclick="handleSlotClick('${id}')" ondblclick="editName('${id}')">${name}</span>
-                            ${showControls ? `<button class="btn-win" onclick="advance('${currentId}','${type}',${r},${m},${p})">➔</button>` : ""}
-                            ${showControls ? `<button class="btn-dnf" onclick="triggerDNF('${currentId}','${type}',${r},${m},${p})">X</button>` : ""}
+                    let html = `<div class="match-box ${isNext ? 'next-match' : ''}">`;
+                    if(done) html += `<div class="btn-reset" onclick="resetMatch('${type}',${r},${m})">↺</div>`;
+                    html += [0,1].map(p => {
+                        const id = `${type}_r${r}_m${m}_p${p}`;
+                        const name = ev.names[id] || '--';
+                        return `<div class="player-row ${ev.status[id]==='loss'?'is-loser':''} ${ev.status[id]==='dnf'?'is-dnf':''}">
+                            <span class="p-name" onclick="slotClick('${id}')" ondblclick="editName('${id}')">${name}</span>
+                            ${(ev.names[id] && name !== '--' && !done) ? `<button class="btn-win" onclick="advance('${type}',${r},${m},${p})">➔</button>` : ''}
                         </div>`;
-                            })
-                            .join("");
-                        html += `</div>`;
-                        roundDiv.innerHTML += html;
-                    }
-                    container.appendChild(roundDiv);
-                    matches /= 2;
+                    }).join('');
+                    roundDiv.innerHTML += html + `</div>`;
                 }
+                container.appendChild(roundDiv);
+                matches /= 2;
             }
+        }
 
-            function advance(evId, type, r, m, p, isBye = false) {
-                const ev = events[evId];
-                const wId = `${type}_r${r}_m${m}_p${p}`;
-                const lId = `${type}_r${r}_m${m}_p${p === 0 ? 1 : 0}`;
+        function advance(type, r, m, p) {
+            const ev = events[currentId];
+            const wId = `${type}_r${r}_m${m}_p${p}`, lId = `${type}_r${r}_m${m}_p${p===0?1:0}`;
+            ev.status[wId] = 'win'; ev.status[lId] = 'loss';
+            const wName = ev.names[wId], lName = ev.names[lId];
 
-                ev.status[wId] = "win";
-                ev.status[lId] = "loss";
-                const wName = ev.names[wId];
-                const lName = ev.names[lId];
+            const totalR = Math.ceil(Math.log2(type==='main'?ev.count:ev.count/2));
+            
+            // Check for 3rd Place (Semifinal Loser)
+            if(type === 'main' && r === totalR - 2) ev.third = lName;
 
-                const totalR = Math.ceil(
-                    Math.log2(type === "main" ? ev.count : ev.count / 2),
-                );
-                if (r < totalR - 1) {
-                    ev.names[
-                        `${type}_r${r + 1}_m${Math.floor(m / 2)}_p${m % 2}`
-                    ] = wName;
-                } else {
-                    if (type === "main") {
-                        ev.mainWinner = wName;
-                        ev.finalist = lName;
-                        if (!isBye) showPodium();
-                    } else ev.subWinner = wName;
-                    if (!isBye) confetti({ particleCount: 150 });
-                }
-
-                // Drop to Redemption (only from Main R0)
-                if (type === "main" && r === 0 && lName !== "BYE") {
-                    ev.names[`sub_r0_m${Math.floor(m / 2)}_p${m % 2}`] = lName;
-                }
-                save();
-                renderAllBrackets();
-                renderRedemptionList();
-                updateLeague();
+            if (r < totalR - 1) {
+                ev.names[`${type}_r${r+1}_m${Math.floor(m/2)}_p${m%2}`] = wName;
+            } else { 
+                if(type==='main') { ev.mainWinner=wName; ev.finalist=lName; } else ev.subWinner=wName;
+                confetti({particleCount:200, spread: 70, origin: {y: 0.7}});
             }
-
-            function triggerDNF(evId, type, r, m, p) {
-                const ev = events[evId];
-                ev.status[`${type}_r${r}_m${m}_p${p}`] = "dnf";
-                advance(evId, type, r, m, p === 0 ? 1 : 0);
+            
+            // Drop to Redemption
+            if(type === 'main' && r === 0) {
+                ev.names[`sub_r0_m${Math.floor(m/2)}_p${m%2}`] = lName;
             }
+            save(); renderAll();
+        }
 
-            function resetMatch(type, r, m) {
-                if (!confirm("Match zurücksetzen?")) return;
-                const ev = events[currentId];
+        function resetMatch(type, r, m) {
+            const ev = events[currentId];
+            delete ev.status[`${type}_r${r}_m${m}_p0`]; 
+            delete ev.status[`${type}_r${r}_m${m}_p1`];
+            
+            const totalR = Math.ceil(Math.log2(type==='main'?ev.count:ev.count/2));
+            if(r < totalR - 1) delete ev.names[`${type}_r${r+1}_m${Math.floor(m/2)}_p${m%2}`];
+            else { ev.mainWinner = null; ev.finalist = null; }
+            
+            if(type==='main' && r===0) delete ev.names[`sub_r0_m${Math.floor(m/2)}_p${m%2}`];
+            
+            save(); renderAll();
+        }
 
-                // Clean status
-                delete ev.status[`${type}_r${r}_m${m}_p0`];
-                delete ev.status[`${type}_r${r}_m${m}_p1`];
+        function editName(id) {
+            const n = prompt("Name ändern:", events[currentId].names[id]);
+            if(n) { events[currentId].names[id] = n; save(); renderAll(); }
+        }
 
-                // Clean Next Round Entry
-                const totalR = Math.ceil(
-                    Math.log2(type === "main" ? ev.count : ev.count / 2),
-                );
-                if (r < totalR - 1)
-                    delete ev.names[
-                        `${type}_r${r + 1}_m${Math.floor(m / 2)}_p${m % 2}`
-                    ];
-                else {
-                    if (type === "main") {
-                        ev.mainWinner = null;
-                        ev.finalist = null;
-                    } else ev.subWinner = null;
-                }
+        function renderRedemptionList() {
+            const list = document.getElementById('redemption-list');
+            list.innerHTML = "";
+            let names = [];
+            Object.keys(events[currentId].names).forEach(k => { if(k.startsWith('sub_')) names.push(events[currentId].names[k]); });
+            [...new Set(names)].forEach(n => {
+                const d = document.createElement('div'); d.textContent = n;
+                d.onclick = () => { wildcard = n; document.getElementById('wildcard-info').textContent = "ZIEL WÄHLEN: " + n; };
+                list.appendChild(d);
+            });
+        }
 
-                // Clean Redemption Entry & Sub-Match Status (Deep Clean)
-                if (type === "main" && r === 0) {
-                    const subId = `sub_r0_m${Math.floor(m / 2)}_p${m % 2}`;
-                    delete ev.names[subId]; // remove name
-                    // Check if the sub match was already played with this name?
-                    // If sub match has a result, we must reset it too to prevent ghost state
-                    const subM = Math.floor(m / 2);
-                    if (
-                        ev.status[`sub_r0_m${subM}_p0`] ||
-                        ev.status[`sub_r0_m${subM}_p1`]
-                    ) {
-                        // Recursively reset the sub match
-                        resetMatch("sub", 0, subM);
-                    }
-                }
-
-                save();
-                renderAllBrackets();
-                renderRedemptionList();
-                updateLeague();
+        function slotClick(id) {
+            if(wildcard) { 
+                events[currentId].names[id] = wildcard; 
+                wildcard = null; 
+                document.getElementById('wildcard-info').textContent = ""; 
+                save(); renderAll(); 
             }
+        }
 
-            function editName(id) {
-                const n = prompt("Name ändern:", events[currentId].names[id]);
-                if (n) {
-                    events[currentId].names[id] = n;
-                    save();
-                    renderAllBrackets();
-                }
-            }
+        function showPodium() {
+            const ev = events[currentId];
+            document.getElementById('p1').innerText = "🥇 " + ev.mainWinner;
+            document.getElementById('p2').innerText = "🥈 " + (ev.finalist || "--");
+            document.getElementById('p3').innerText = "🥉 " + (ev.third || "--");
+            document.getElementById('podium-overlay').style.display = 'flex';
+        }
 
-            function renderRedemptionList() {
-                const ev = events[currentId];
-                if (!ev) return;
-                const list = document.getElementById("redemption-list");
-                list.innerHTML = "";
-                let names = [];
-                // List everyone who is in the sub bracket
-                Object.keys(ev.names).forEach((k) => {
-                    if (k.startsWith("sub_")) names.push(ev.names[k]);
-                });
-                names = [...new Set(names)].sort();
+        function updateLeague() {
+            let s = {};
+            Object.values(events).forEach(ev => {
+                if(ev.mainWinner) s[ev.mainWinner] = (s[ev.mainWinner]||0)+25;
+                if(ev.finalist) s[ev.finalist] = (s[ev.finalist]||0)+18;
+                if(ev.subWinner) s[ev.subWinner] = (s[ev.subWinner]||0)+10;
+                Object.values(ev.names).forEach(n => { if(n && n!=="--" && n!=="BYE") s[n] = (s[n]||0)+1; });
+            });
+            document.getElementById('league-body').innerHTML = Object.entries(s).sort((a,b)=>b[1]-a[1]).map((v,i)=>`<tr><td>#${i+1}</td><td>${v[0]}</td><td align="right"><b>${v[1]}</b></td></tr>`).join('');
+        }
 
-                names.forEach((n) => {
-                    const d = document.createElement("div");
-                    d.className = "redemption-pool-item";
-                    d.textContent = n;
-                    d.onclick = () => setWildcard(n);
-                    list.appendChild(d);
-                });
-            }
-            function setWildcard(n) {
-                wildcard = n;
-                document.getElementById("wildcard-info").innerHTML =
-                    `Ziel wählen: <b>${n}</b>`;
-                renderAllBrackets();
-            }
-            function handleSlotClick(id) {
-                if (wildcard) {
-                    // Prevention: Don't overwrite if match is already done
-                    if (events[currentId].status[id]) {
-                        alert(
-                            "Match ist bereits beendet! Bitte erst zurücksetzen (Reset).",
-                        );
-                        return;
-                    }
-                    events[currentId].names[id] = wildcard;
-                    wildcard = null;
-                    document.getElementById("wildcard-info").innerHTML = "";
-                    save();
-                    renderAllBrackets();
-                }
-            }
-
-            function showPodium() {
-                const ev = events[currentId];
-                document.getElementById("p1").innerText =
-                    "🥇 " + (ev.mainWinner || "--");
-                document.getElementById("p2").innerText =
-                    "🥈 " + (ev.finalist || "--");
-                document.getElementById("p3").innerText =
-                    "🥉 " + (ev.subWinner || "Redemption Winner");
-                openOverlay("podium-overlay");
-            }
-
-            function updateLeague() {
-                let s = {};
-                Object.values(events).forEach((ev) => {
-                    // Advanced Scoring:
-                    // Main Winner: 25, Finalist: 18, Semi: 12, QF: 8, Last 16: 4
-                    // Sub Winner: 10, Sub Finalist: 6
-
-                    const mainRounds = Math.ceil(Math.log2(ev.count));
-                    const subRounds = Math.ceil(Math.log2(ev.count / 2));
-
-                    // Helper to find highest round reached per player
-                    let progress = {};
-
-                    Object.keys(ev.names).forEach((k) => {
-                        const n = ev.names[k];
-                        if (!n || n === "BYE") return;
-                        if (!progress[n]) progress[n] = { mainR: -1, subR: -1 };
-
-                        const r = parseInt(k.match(/r(\d+)/)[1]);
-                        if (k.startsWith("main_")) {
-                            if (r > progress[n].mainR) progress[n].mainR = r;
-                        } else if (k.startsWith("sub_")) {
-                            if (r > progress[n].subR) progress[n].subR = r;
-                        }
-                    });
-
-                    Object.keys(progress).forEach((p) => {
-                        const d = progress[p];
-                        let pts = 1; // Base participation
-
-                        // Main Bracket Points
-                        if (ev.mainWinner === p) pts += 25;
-                        else if (d.mainR === mainRounds - 1) pts += 18;
-                        else if (d.mainR === mainRounds - 2) pts += 12;
-                        else if (d.mainR === mainRounds - 3) pts += 8;
-                        else if (d.mainR > 0) pts += 4;
-
-                        // Sub Bracket Points
-                        if (ev.subWinner === p) pts += 10;
-                        else if (d.subR === subRounds - 1) pts += 6;
-
-                        s[p] = (s[p] || 0) + pts;
-                    });
-                });
-
-                const sorted = Object.entries(s).sort((a, b) => b[1] - a[1]);
-                document.getElementById("league-body").innerHTML = sorted
-                    .map(
-                        (v, i) =>
-                            `<tr><td class="${i < 3 ? "rank-" + (i + 1) : ""}">#${i + 1}</td><td>${v[0]}</td><td style="text-align:right">${v[1]}</td></tr>`,
-                    )
-                    .join("");
-            }
-
-            function deleteEvent(id) {
-                if (confirm("Löschen?")) {
-                    delete events[id];
-                    save();
-                    location.reload();
-                }
-            }
-            function fullReset() {
-                if (confirm("ALLES LÖSCHEN?")) {
-                    localStorage.clear();
-                    location.reload();
-                }
-            }
-            function exportData() {
-                const a = document.createElement("a");
-                a.href = URL.createObjectURL(
-                    new Blob([JSON.stringify(events)], {
-                        type: "application/json",
-                    }),
-                );
-                a.download = "backup.json";
-                a.click();
-            }
-            function importData(e) {
-                const r = new FileReader();
-                r.onload = () => {
-                    events = JSON.parse(r.result);
-                    save();
-                    location.reload();
-                };
-                r.readAsText(e.files[0]);
-            }
-        </script>
-    </body>
+        function exportData() { const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(events)],{type:'application/json'})); a.download='bike_battle_backup.json'; a.click(); }
+        function fullReset() { if(confirm("ALLES LÖSCHEN?")) { localStorage.clear(); location.reload(); } }
+    </script>
+</body>
 </html>
