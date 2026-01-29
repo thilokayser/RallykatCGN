@@ -1,8 +1,6 @@
 # RallykatCGN
 Racing for Everyone
 
-
-Hier ist eine strukturierte README.md Datei, die genau auf den Funktionen der Version 26 (Complete Edition) basiert. Du kannst diesen Text direkt als Dokumentation für dein Projekt nutzen.
 🏆 Bike Battle - Elite Race Director (V26)
 
 Der Bike Battle Race Director ist ein professionelles, browserbasiertes Tool zur Verwaltung von K.O.-Turnieren (Brackets). Es wurde speziell für Renn-Events entwickelt und bietet ein einzigartiges Dual-Bracket-System mit integrierter "Redemption"-Mechanik, Liga-Ranking und Wildcard-Verwaltung.
