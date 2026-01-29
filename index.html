@@ -2,7 +2,8 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Bike Battle - Race Director V27</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bike Battle - Mobile Director V28</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <style>
@@ -12,97 +13,154 @@
             --gold: #fcd303; --gold-dim: rgba(252, 211, 3, 0.1);
             --red: #ff4757; --red-dim: rgba(255, 71, 87, 0.1);
             --text: #ffffff; --text-dim: #a1a1aa;
-            --sidebar-w: 320px;
+            --sidebar-w: 300px;
         }
 
-        * { box-sizing: border-box; outline: none; user-select: none; }
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; }
         body { 
             font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); 
             margin: 0; display: flex; height: 100vh; overflow: hidden;
             background-image: radial-gradient(circle at 50% 0%, #1f1f25 0%, #09090b 80%);
         }
 
-        /* SIDEBAR */
+        /* --- SIDEBAR (Off-Canvas on Mobile) --- */
         .sidebar { 
-            width: var(--sidebar-w); background: var(--glass); backdrop-filter: blur(20px);
-            border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 50;
-            transition: margin-left 0.3s ease; flex-shrink: 0;
+            width: var(--sidebar-w); background: #111; 
+            border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 1000;
+            position: fixed; top: 0; bottom: 0; left: 0;
+            transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
         }
-        .sidebar.hidden { margin-left: calc(var(--sidebar-w) * -1); }
-        .sidebar-header { padding: 25px; text-align: center; font-weight: 800; color: var(--gold); border-bottom: 1px solid var(--border); letter-spacing: 2px; text-transform: uppercase; }
+        .sidebar.active { transform: translateX(0); }
+        
+        /* Backdrop for mobile sidebar */
+        .sidebar-backdrop {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 999;
+            backdrop-filter: blur(3px); display: none;
+        }
+        .sidebar-backdrop.active { display: block; }
+
+        .sidebar-header { padding: 20px; text-align: center; font-weight: 800; color: var(--gold); border-bottom: 1px solid var(--border); letter-spacing: 2px; text-transform: uppercase; }
         .league-container { flex: 1; overflow-y: auto; padding: 0; }
         .league-table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
         .league-table td { padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.02); }
         .rank-1 { color: #ffd700; font-weight: bold; }
 
-        /* MAIN CONTENT */
-        .main-content { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-        .top-nav { height: 60px; padding: 0 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); }
+        /* --- MAIN CONTENT --- */
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; width: 100%; }
         
-        .controls-bar { padding: 15px 30px; display: flex; gap: 15px; background: rgba(255,255,255,0.02); align-items: center; border-bottom: 1px solid var(--border); }
-        .input-dark { background: #000; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 6px; font-family: inherit; }
+        .top-nav { 
+            height: 60px; padding: 0 15px; border-bottom: 1px solid var(--border); 
+            display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4);
+            flex-shrink: 0;
+        }
         
-        .btn { border: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.8em; text-transform: uppercase; transition: 0.2s; }
-        .btn:hover { filter: brightness(1.2); }
+        .controls-bar { 
+            padding: 10px 15px; display: flex; gap: 10px; background: rgba(255,255,255,0.02); 
+            align-items: center; border-bottom: 1px solid var(--border); flex-shrink: 0; flex-wrap: wrap;
+        }
+        
+        .input-dark { background: #000; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 6px; font-family: inherit; font-size: 14px; }
+        
+        .btn { border: none; padding: 10px 15px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.8em; text-transform: uppercase; transition: 0.2s; white-space: nowrap; }
+        .btn:active { transform: scale(0.96); }
         .btn-gold { background: var(--gold); color: #000; }
         .btn-sub { background: #27272a; color: #fff; border: 1px solid #3f3f46; }
-        .btn-toggle { background: transparent; color: #fff; font-size: 1.5em; border: none; cursor: pointer; }
+        .btn-toggle { background: transparent; color: #fff; font-size: 1.8em; border: none; cursor: pointer; padding: 5px; }
 
-        .tabs-row { display: flex; gap: 8px; padding: 10px 30px; overflow-x: auto; background: #0c0c0e; border-bottom: 1px solid var(--border); }
-        .tab { padding: 6px 15px; font-size: 0.75em; color: var(--text-dim); cursor: pointer; border-radius: 20px; background: rgba(255,255,255,0.05); white-space: nowrap; border: 1px solid transparent; }
+        .tabs-row { 
+            display: flex; gap: 8px; padding: 10px 15px; overflow-x: auto; 
+            background: #0c0c0e; border-bottom: 1px solid var(--border); 
+            flex-shrink: 0; -webkit-overflow-scrolling: touch;
+        }
+        .tab { padding: 8px 16px; font-size: 0.8em; color: var(--text-dim); cursor: pointer; border-radius: 20px; background: rgba(255,255,255,0.05); white-space: nowrap; border: 1px solid transparent; }
         .tab.active { background: #27272a; color: var(--gold); border: 1px solid #3f3f46; }
 
-        /* BRACKET */
-        .bracket-scroll { flex: 1; overflow: auto; padding: 50px; scroll-behavior: smooth; }
-        .bracket-container { display: flex; gap: 60px; margin-bottom: 80px; }
-        .round { display: flex; flex-direction: column; justify-content: space-around; min-width: 280px; }
+        /* --- BRACKET SCROLL AREA --- */
+        .bracket-scroll { 
+            flex: 1; overflow: auto; padding: 20px; 
+            -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+            background-image: radial-gradient(#222 1px, transparent 1px); background-size: 20px 20px;
+        }
+        .bracket-container { display: flex; gap: 30px; margin-bottom: 80px; padding-right: 50px; }
+        .round { display: flex; flex-direction: column; justify-content: space-around; min-width: 260px; }
         
-        .match-box { background: #18181b; border: 1px solid var(--border); border-radius: 12px; padding: 12px; position: relative; display: flex; flex-direction: column; gap: 8px; margin: 20px 0; }
+        .match-box { 
+            background: #18181b; border: 1px solid var(--border); border-radius: 12px; padding: 10px; 
+            position: relative; display: flex; flex-direction: column; gap: 6px; margin: 15px 0; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
         .match-box.next-match { border-color: var(--gold); box-shadow: 0 0 15px var(--gold-dim); }
-        .round:not(:last-child) .match-box::after { content: ''; position: absolute; right: -60px; top: 50%; width: 60px; height: 2px; background: #333; z-index: -1; }
+        
+        /* Connector Lines (Visible on Desktop, subtle on mobile) */
+        .round:not(:last-child) .match-box::after { 
+            content: ''; position: absolute; right: -30px; top: 50%; width: 30px; height: 2px; background: #333; z-index: -1; 
+        }
 
-        .player-row { display: flex; align-items: center; gap: 8px; background: #27272a; padding: 8px 10px; border-radius: 6px; height: 40px; }
+        .player-row { 
+            display: flex; align-items: center; gap: 8px; background: #27272a; padding: 5px 8px; 
+            border-radius: 6px; height: 44px; /* Taller for touch */
+        }
         .p-name { flex: 1; font-weight: 600; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
         
-        .btn-win { width: 24px; height: 24px; border: none; border-radius: 4px; cursor: pointer; background: #444; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-        .btn-win:hover { background: var(--gold); color: #000; }
+        /* ACTION BUTTONS (Touch Optimized) */
+        .btn-win { width: 32px; height: 32px; border: none; border-radius: 6px; cursor: pointer; background: #444; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .btn-win:hover, .btn-win:active { background: var(--gold); color: #000; }
         
-        .btn-dnf { width: 24px; height: 24px; border: 1px solid var(--red); border-radius: 4px; cursor: pointer; background: transparent; color: var(--red); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 900; }
-        .btn-dnf:hover { background: var(--red); color: #fff; }
+        .btn-dnf { width: 32px; height: 32px; border: 1px solid var(--red); border-radius: 6px; cursor: pointer; background: transparent; color: var(--red); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; }
+        .btn-dnf:active { background: var(--red); color: #fff; }
 
-        .btn-reset { position: absolute; top: -10px; right: -10px; background: #222; color: #fff; border: 1px solid #555; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; font-size: 14px; }
-        .btn-reset:hover { border-color: var(--red); color: var(--red); }
+        .btn-reset { position: absolute; top: -10px; right: -5px; background: #222; color: #fff; border: 1px solid #555; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; font-size: 16px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
 
         .is-loser { opacity: 0.3; filter: grayscale(1); }
         .is-dnf .p-name { text-decoration: line-through; color: var(--red); opacity: 0.6; }
 
         /* OVERLAYS */
-        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 200; align-items: center; justify-content: center; }
-        .glass-card { background: #18181b; border: 1px solid var(--border); padding: 40px; border-radius: 20px; width: 600px; max-width: 90%; text-align: center; }
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
+        .glass-card { background: #18181b; border: 1px solid var(--border); padding: 30px; border-radius: 20px; width: 100%; max-width: 500px; text-align: center; max-height: 90vh; overflow-y: auto; }
         .doc-step { text-align: left; margin-bottom: 15px; border-left: 3px solid var(--gold); padding-left: 15px; }
         .doc-step h4 { color: var(--gold); margin: 0 0 5px 0; text-transform: uppercase; font-size: 0.85em; }
         .doc-step p { color: var(--text-dim); margin: 0; font-size: 0.9em; line-height: 1.4; }
 
-        #redemption-list div { padding: 8px; border-bottom: 1px solid #333; cursor: pointer; font-size: 0.85em; }
-        #redemption-list div:hover { color: var(--gold); background: rgba(255,255,255,0.02); }
+        #redemption-list div { padding: 12px; border-bottom: 1px solid #333; cursor: pointer; font-size: 0.9em; }
+
+        /* --- MOBILE MEDIA QUERIES --- */
+        @media (min-width: 1024px) {
+            .sidebar { transform: translateX(0); position: relative; width: 300px; }
+            .sidebar-backdrop { display: none !important; }
+            .btn-toggle { display: none; }
+            .controls-bar { flex-wrap: nowrap; }
+        }
+
+        @media (max-width: 1023px) {
+            .controls-bar { flex-direction: column; align-items: stretch; }
+            .input-dark, .btn { width: 100%; }
+            #playerList { height: 60px; }
+            .bracket-scroll { padding: 15px; }
+            .round { min-width: 85vw; /* Rounds take almost full screen width on mobile */ }
+            .bracket-container { gap: 15px; }
+            .round:not(:last-child) .match-box::after { display: none; /* Hide lines on mobile to avoid mess */ }
+        }
     </style>
 </head>
 <body>
 
+    <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="toggleSidebar()"></div>
+
     <div id="doc-overlay" class="overlay">
         <div class="glass-card">
-            <h2 style="color:var(--gold); margin-top:0;">📖 RACE DIRECTOR GUIDE</h2>
-            <div class="doc-step"><h4>1. Start</h4><p>Fahrernamen (einer pro Zeile) in die Box kopieren, dann <b>RANDOMIZE</b> klicken.</p></div>
-            <div class="doc-step"><h4>2. Match Steuerung</h4><p><b>➔</b> = Sieger.<br><b>DNF</b> = Did Not Finish (Gegner gewinnt automatisch).<br><b>↺</b> = Reset (erscheint oben rechts an der Box nach Ergebnis).</p></div>
-            <div class="doc-step"><h4>3. Drop Down</h4><p>Verlierer der ersten Runde (Main) fallen automatisch ins untere Redemption Bracket.</p></div>
-            <div class="doc-step"><h4>4. Wildcard</h4><p>Klicke einen Namen im "Wildcard Pool" (Sidebar) an, danach auf ein beliebiges Feld im Bracket.</p></div>
-            <button class="btn btn-gold" style="width:100%" onclick="closeOverlay('doc-overlay')">VERSTANDEN</button>
+            <h2 style="color:var(--gold); margin-top:0;">📖 GUIDE</h2>
+            <div class="doc-step"><h4>1. Start</h4><p>Namen eingeben & <b>RANDOMIZE</b>.</p></div>
+            <div class="doc-step"><h4>2. Match</h4><p><b>➔</b> = Sieg. <b>DNF</b> = Ausfall. <br><b>↺</b> = Reset.</p></div>
+            <div class="doc-step"><h4>3. Drop Down</h4><p>Runde 0 Verlierer ➔ Redemption Bracket.</p></div>
+            <div class="doc-step"><h4>4. Wildcard</h4><p>Name in Sidebar wählen ➔ Leeres Feld klicken.</p></div>
+            <button class="btn btn-gold" style="width:100%" onclick="closeOverlay('doc-overlay')">OK</button>
         </div>
     </div>
 
     <div id="podium-overlay" class="overlay">
         <div class="glass-card">
-            <h1 style="color:var(--gold); margin-bottom: 30px;">VICTORY</h1>
+            <h1 style="color:var(--gold); margin-bottom: 20px;">VICTORY</h1>
             <div id="p1" style="margin:10px; padding:20px; border:2px solid var(--gold); color:var(--gold); font-weight: 800; font-size: 1.4em;">🥇 --</div>
             <div id="p2" style="margin:10px; padding:15px; border:1px solid #888; color:#fff;">🥈 --</div>
             <div id="p3" style="margin:10px; padding:15px; border:1px solid #cd7f32; color:#cd7f32;">🥉 --</div>
@@ -111,7 +169,7 @@
     </div>
 
     <div class="sidebar" id="sidebar">
-        <div class="sidebar-header">LEAGUE</div>
+        <div class="sidebar-header">BIKE BATTLE</div>
         <div class="league-container"><table class="league-table"><tbody id="league-body"></tbody></table></div>
         <div style="padding:15px; border-top:1px solid #222; background:rgba(0,0,0,0.3);">
             <div style="font-size:0.7em; font-weight:900; color:var(--red); margin-bottom:10px; text-transform: uppercase;">Wildcard Pool</div>
@@ -122,50 +180,55 @@
             <button class="btn btn-sub" onclick="exportData()">💾 SAVE</button>
             <button class="btn btn-sub" onclick="document.getElementById('importFile').click()">📂 LOAD</button>
             <input type="file" id="importFile" style="display:none" onchange="importData(this)">
-            <button class="btn btn-sub" style="grid-column: span 2; color:var(--red); border-color:var(--red);" onclick="fullReset()">⚠ RESET ALL</button>
+            <button class="btn btn-sub" style="grid-column: span 2; color:var(--red); border-color:var(--red);" onclick="fullReset()">RESET</button>
         </div>
     </div>
 
     <div class="main-content">
         <div class="top-nav">
-            <div style="display:flex; align-items:center; gap:15px;">
+            <div style="display:flex; align-items:center; gap:10px;">
                 <button class="btn-toggle" onclick="toggleSidebar()">☰</button>
-                <div style="font-weight:900; color:var(--gold); letter-spacing: 1px;">RACE DIRECTOR</div>
+                <div style="font-weight:900; color:var(--gold); letter-spacing: 1px; font-size: 0.9em;">RACE DIRECTOR</div>
             </div>
             <button class="btn btn-sub" onclick="openOverlay('doc-overlay')" style="font-size:1.2em; padding: 5px 12px;">?</button>
         </div>
 
         <div class="controls-bar">
-            <input type="text" id="eventName" class="input-dark" placeholder="Race Name..." style="width:180px;">
-            <button class="btn btn-gold" onclick="addNewEvent()">NEW TAB</button>
-            <textarea id="playerList" class="input-dark" style="flex:1; height:40px; resize:none;" placeholder="Fahrerliste hier einfügen..."></textarea>
+            <input type="text" id="eventName" class="input-dark" placeholder="Event Name...">
+            <button class="btn btn-gold" onclick="addNewEvent()">NEW EVENT</button>
+            <textarea id="playerList" class="input-dark" placeholder="Fahrerliste hier..." rows="1"></textarea>
             <button class="btn btn-sub" style="background:#333;" onclick="randomizePlayers()">🎲 RANDOMIZE</button>
         </div>
 
         <div id="event-tabs" class="tabs-row"></div>
 
         <div class="bracket-scroll">
-            <div style="color:var(--gold); font-weight:900; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px;">Championship Bracket</div>
+            <div style="color:var(--gold); font-weight:900; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">Championship</div>
             <div id="main-bracket-container" class="bracket-container"></div>
             
-            <div id="red-section" style="display:none; margin-top:80px; border-top:1px dashed #333; padding-top:40px;">
-                <div style="color:var(--red); font-weight:900; margin-bottom:20px; text-transform: uppercase; letter-spacing: 1px;">Redemption Round</div>
+            <div id="red-section" style="display:none; margin-top:60px; border-top:1px dashed #333; padding-top:40px;">
+                <div style="color:var(--red); font-weight:900; margin-bottom:15px; text-transform: uppercase; letter-spacing: 1px;">Redemption</div>
                 <div id="sub-bracket-container" class="bracket-container"></div>
             </div>
-            <div id="finish-area" style="text-align:center; padding:60px;"></div>
+            <div id="finish-area" style="text-align:center; padding:40px;"></div>
         </div>
     </div>
 
     <script>
         let events = {}; let currentId = null; let wildcard = null;
-        const KEY = 'bike_battle_v27_restore';
+        const KEY = 'bike_battle_v28_mobile';
 
         window.onload = () => {
             const s = localStorage.getItem(KEY);
             if(s) { events = JSON.parse(s); if(Object.keys(events).length) loadEvent(Object.keys(events)[0]); }
         };
 
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('hidden'); }
+        function toggleSidebar() { 
+            const sb = document.getElementById('sidebar');
+            const bd = document.getElementById('sidebar-backdrop');
+            sb.classList.toggle('active'); 
+            bd.classList.toggle('active');
+        }
         function openOverlay(id) { document.getElementById(id).style.display = 'flex'; }
         function closeOverlay(id) { document.getElementById(id).style.display = 'none'; }
         function save() { localStorage.setItem(KEY, JSON.stringify(events)); updateLeague(); }
@@ -182,7 +245,7 @@
             if(hasSub) renderBracket('sub', ev.count / 2, document.getElementById('sub-bracket-container'));
             renderRedemptionList();
             updateLeague();
-            document.getElementById('finish-area').innerHTML = ev.mainWinner ? `<button class="btn btn-gold" style="padding: 15px 40px; font-size: 1.1em;" onclick="showPodium()">🏆 PODIUM ANZEIGEN</button>` : "";
+            document.getElementById('finish-area').innerHTML = ev.mainWinner ? `<button class="btn btn-gold" style="padding: 15px 40px; font-size: 1.1em;" onclick="showPodium()">🏆 PODIUM</button>` : "";
         }
 
         function renderTabs() {
@@ -244,7 +307,7 @@
                             <span class="p-name" onclick="slotClick('${id}')" ondblclick="editName('${id}')">${name}</span>
                             ${showControls ? `
                                 <button class="btn-win" onclick="advance('${type}',${r},${m},${p})">➔</button>
-                                <button class="btn-dnf" onclick="triggerDNF('${type}',${r},${m},${p})">DNF</button>
+                                <button class="btn-dnf" onclick="triggerDNF('${type}',${r},${m},${p})">X</button>
                             ` : ''}
                         </div>`;
                     }).join('');
@@ -269,7 +332,7 @@
                 ev.names[`${type}_r${r+1}_m${Math.floor(m/2)}_p${m%2}`] = wName;
             } else { 
                 if(type==='main') { ev.mainWinner=wName; ev.finalist=lName; } else ev.subWinner=wName;
-                confetti({particleCount:150});
+                confetti({particleCount:150, spread: 70});
             }
             if(type === 'main' && r === 0) { ev.names[`sub_r0_m${Math.floor(m/2)}_p${m%2}`] = lName; }
             save(); renderAll();
@@ -307,14 +370,14 @@
             Object.keys(events[currentId].names).forEach(k => { if(k.startsWith('sub_')) names.push(events[currentId].names[k]); });
             [...new Set(names)].forEach(n => {
                 const d = document.createElement('div'); d.textContent = n;
-                d.onclick = () => { wildcard = n; document.getElementById('wildcard-info').textContent = "ZIEL WÄHLEN: " + n; };
+                d.onclick = () => { wildcard = n; document.getElementById('wildcard-info').textContent = "Ziel: " + n; if(window.innerWidth < 1024) toggleSidebar(); };
                 list.appendChild(d);
             });
         }
 
         function slotClick(id) {
             if(wildcard) { 
-                if(events[currentId].status[id]) return alert("Match beendet!");
+                if(events[currentId].status[id]) return alert("Match beendet! Erst Reset.");
                 events[currentId].names[id] = wildcard; wildcard = null; 
                 document.getElementById('wildcard-info').textContent = ""; save(); renderAll(); 
             }
