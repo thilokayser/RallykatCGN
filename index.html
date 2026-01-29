@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Bike Battle - Elite Race Director V25</title>
+    <title>Bike Battle - Race Director V26</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <style>
@@ -33,40 +33,56 @@
         .league-container { flex: 1; overflow-y: auto; padding: 0; }
         .league-table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
         .league-table td { padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.02); }
+        .rank-1 { color: #ffd700; font-weight: bold; }
 
-        /* MAIN */
+        /* MAIN CONTENT */
         .main-content { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
         .top-nav { height: 60px; padding: 0 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); }
+        
         .controls-bar { padding: 15px 30px; display: flex; gap: 15px; background: rgba(255,255,255,0.02); align-items: center; border-bottom: 1px solid var(--border); }
         .input-dark { background: #000; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 6px; font-family: inherit; }
         
-        .btn { border: none; padding: 10px 20px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.8em; text-transform: uppercase; transition: 0.2s; }
+        .btn { border: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.8em; text-transform: uppercase; transition: 0.2s; }
+        .btn:hover { filter: brightness(1.2); }
         .btn-gold { background: var(--gold); color: #000; }
         .btn-sub { background: #27272a; color: #fff; border: 1px solid #3f3f46; }
+        .btn-toggle { background: transparent; color: #fff; font-size: 1.5em; border: none; cursor: pointer; }
 
         .tabs-row { display: flex; gap: 8px; padding: 10px 30px; overflow-x: auto; background: #0c0c0e; border-bottom: 1px solid var(--border); }
-        .tab { padding: 6px 15px; font-size: 0.75em; color: var(--text-dim); cursor: pointer; border-radius: 20px; background: rgba(255,255,255,0.05); white-space: nowrap; }
+        .tab { padding: 6px 15px; font-size: 0.75em; color: var(--text-dim); cursor: pointer; border-radius: 20px; background: rgba(255,255,255,0.05); white-space: nowrap; border: 1px solid transparent; }
         .tab.active { background: #27272a; color: var(--gold); border: 1px solid #3f3f46; }
 
         /* BRACKET */
         .bracket-scroll { flex: 1; overflow: auto; padding: 50px; scroll-behavior: smooth; }
-        .bracket-container { display: flex; gap: 60px; margin-bottom: 100px; }
-        .round { display: flex; flex-direction: column; justify-content: space-around; min-width: 260px; }
+        .bracket-container { display: flex; gap: 60px; margin-bottom: 80px; }
+        .round { display: flex; flex-direction: column; justify-content: space-around; min-width: 280px; }
+        
         .match-box { background: #18181b; border: 1px solid var(--border); border-radius: 12px; padding: 12px; position: relative; display: flex; flex-direction: column; gap: 8px; margin: 20px 0; }
         .match-box.next-match { border-color: var(--gold); box-shadow: 0 0 15px var(--gold-dim); }
-        
+        .round:not(:last-child) .match-box::after { content: ''; position: absolute; right: -60px; top: 50%; width: 60px; height: 2px; background: #333; z-index: -1; }
+
         .player-row { display: flex; align-items: center; gap: 8px; background: #27272a; padding: 8px 10px; border-radius: 6px; height: 40px; }
         .p-name { flex: 1; font-weight: 600; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
         
-        .btn-win { width: 26px; height: 26px; border: none; border-radius: 4px; cursor: pointer; background: #444; color: #fff; font-size: 14px; }
+        /* ACTION BUTTONS */
+        .btn-win { width: 24px; height: 24px; border: none; border-radius: 4px; cursor: pointer; background: #444; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; }
         .btn-win:hover { background: var(--gold); color: #000; }
+        
+        .btn-dnf { width: 24px; height: 24px; border: 1px solid var(--red); border-radius: 4px; cursor: pointer; background: transparent; color: var(--red); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 900; }
+        .btn-dnf:hover { background: var(--red); color: #fff; }
+
         .btn-reset { position: absolute; top: -10px; right: -10px; background: #222; color: #fff; border: 1px solid #555; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; font-size: 14px; }
+        .btn-reset:hover { border-color: var(--red); color: var(--red); }
 
         .is-loser { opacity: 0.3; filter: grayscale(1); }
-        .is-dnf .p-name { text-decoration: line-through; color: var(--red); }
+        .is-dnf .p-name { text-decoration: line-through; color: var(--red); opacity: 0.6; }
 
+        /* OVERLAYS */
         .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 200; align-items: center; justify-content: center; }
-        .glass-card { background: #18181b; border: 1px solid var(--border); padding: 40px; border-radius: 20px; width: 500px; max-width: 90%; text-align: center; }
+        .glass-card { background: #18181b; border: 1px solid var(--border); padding: 40px; border-radius: 20px; width: 600px; max-width: 90%; text-align: center; }
+        .doc-step { text-align: left; margin-bottom: 15px; border-left: 3px solid var(--gold); padding-left: 15px; }
+        .doc-step h4 { color: var(--gold); margin: 0 0 5px 0; text-transform: uppercase; font-size: 0.85em; }
+        .doc-step p { color: var(--text-dim); margin: 0; font-size: 0.9em; line-height: 1.4; }
 
         #redemption-list div { padding: 8px; border-bottom: 1px solid #333; cursor: pointer; font-size: 0.85em; }
         #redemption-list div:hover { color: var(--gold); background: rgba(255,255,255,0.02); }
@@ -74,9 +90,20 @@
 </head>
 <body>
 
+    <div id="doc-overlay" class="overlay">
+        <div class="glass-card">
+            <h2 style="color:var(--gold); margin-top:0;">📖 RACE DIRECTOR GUIDE</h2>
+            <div class="doc-step"><h4>1. Start</h4><p>Fahrernamen (einer pro Zeile) in die Box kopieren, dann <b>RANDOMIZE</b> klicken.</p></div>
+            <div class="doc-step"><h4>2. Match Steuerung</h4><p><b>➔</b> = Sieger.<br><b>DNF</b> = Did Not Finish (Gegner gewinnt automatisch).<br><b>↺</b> = Reset (erscheint oben rechts an der Box nach Ergebnis).</p></div>
+            <div class="doc-step"><h4>3. Drop Down</h4><p>Verlierer der ersten Runde (Main) fallen automatisch ins untere Redemption Bracket.</p></div>
+            <div class="doc-step"><h4>4. Wildcard</h4><p>Klicke einen Namen im "Wildcard Pool" (Sidebar) an, danach auf ein beliebiges Feld im Bracket.</p></div>
+            <button class="btn btn-gold" style="width:100%" onclick="closeOverlay('doc-overlay')">VERSTANDEN</button>
+        </div>
+    </div>
+
     <div id="podium-overlay" class="overlay">
         <div class="glass-card">
-            <h1 style="color:var(--gold); margin-bottom: 30px;">🏆 PODIUM</h1>
+            <h1 style="color:var(--gold); margin-bottom: 30px;">VICTORY</h1>
             <div id="p1" style="margin:10px; padding:20px; border:2px solid var(--gold); color:var(--gold); font-weight: 800; font-size: 1.4em;">🥇 --</div>
             <div id="p2" style="margin:10px; padding:15px; border:1px solid #888; color:#fff;">🥈 --</div>
             <div id="p3" style="margin:10px; padding:15px; border:1px solid #cd7f32; color:#cd7f32;">🥉 --</div>
@@ -85,26 +112,26 @@
     </div>
 
     <div class="sidebar" id="sidebar">
-        <div class="sidebar-header">BIKE BATTLE LIGA</div>
+        <div class="sidebar-header">LEAGUE</div>
         <div class="league-container"><table class="league-table"><tbody id="league-body"></tbody></table></div>
         <div style="padding:15px; border-top:1px solid #222; background:rgba(0,0,0,0.3);">
             <div style="font-size:0.7em; font-weight:900; color:var(--red); margin-bottom:10px; text-transform: uppercase;">Wildcard Pool</div>
-            <div id="redemption-list"></div>
+            <div id="redemption-list" style="max-height:200px; overflow-y:auto; display:flex; flex-direction:column;"></div>
             <div id="wildcard-info" style="margin-top:10px; color:var(--gold); font-size:0.75em; font-weight: bold;"></div>
         </div>
         <div style="padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <button class="btn btn-sub" onclick="exportData()" style="font-size: 0.7em;">SAVE</button>
-            <button class="btn btn-sub" onclick="fullReset()" style="font-size: 0.7em; color: var(--red);">RESET</button>
+            <button class="btn btn-sub" onclick="exportData()">💾 SAVE</button>
+            <button class="btn btn-sub" onclick="fullReset()" style="color: var(--red);">RESET</button>
         </div>
     </div>
 
     <div class="main-content">
         <div class="top-nav">
             <div style="display:flex; align-items:center; gap:15px;">
-                <button class="btn btn-sub" style="padding: 5px 12px;" onclick="toggleSidebar()">☰</button>
-                <div style="font-weight:900; color:var(--gold); letter-spacing: 1px;">RACE DIRECTOR PRO</div>
+                <button class="btn-toggle" onclick="toggleSidebar()">☰</button>
+                <div style="font-weight:900; color:var(--gold); letter-spacing: 1px;">RACE DIRECTOR</div>
             </div>
-            <button class="btn btn-sub" onclick="alert('ANLEITUNG:\n1. Namen eingeben (einer pro Zeile)\n2. RANDOMIZE klicken\n3. ➔ klicken für Sieg\n4. Doppelklick Name zum Editieren')">?</button>
+            <button class="btn btn-sub" onclick="openOverlay('doc-overlay')" style="font-size:1.2em; padding: 5px 12px;">?</button>
         </div>
 
         <div class="controls-bar">
@@ -130,7 +157,7 @@
 
     <script>
         let events = {}; let currentId = null; let wildcard = null;
-        const KEY = 'bike_battle_v25_ultra';
+        const KEY = 'bike_battle_v26_complete';
 
         window.onload = () => {
             const s = localStorage.getItem(KEY);
@@ -138,12 +165,11 @@
         };
 
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('hidden'); }
+        function openOverlay(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeOverlay(id) { document.getElementById(id).style.display = 'none'; }
         function save() { localStorage.setItem(KEY, JSON.stringify(events)); updateLeague(); }
 
-        function loadEvent(id) {
-            currentId = id;
-            renderAll();
-        }
+        function loadEvent(id) { currentId = id; renderAll(); }
 
         function renderAll() {
             renderTabs();
@@ -155,7 +181,7 @@
             if(hasSub) renderBracket('sub', ev.count / 2, document.getElementById('sub-bracket-container'));
             renderRedemptionList();
             updateLeague();
-            document.getElementById('finish-area').innerHTML = ev.mainWinner ? `<button class="btn btn-gold" style="padding: 20px 50px; font-size: 1.2em;" onclick="showPodium()">🏆 PODIUM ANZEIGEN</button>` : "";
+            document.getElementById('finish-area').innerHTML = ev.mainWinner ? `<button class="btn btn-gold" style="padding: 15px 40px; font-size: 1.1em;" onclick="showPodium()">🏆 PODIUM ANZEIGEN</button>` : "";
         }
 
         function renderTabs() {
@@ -183,7 +209,7 @@
 
             const ev = events[currentId];
             raw.sort(() => Math.random() - 0.5).forEach((n, i) => { 
-                ev.names[`main_r0_m${Math.floor(i/2)}_p${i%2}`] = n;
+                ev.names[`main_r0_m${Math.floor(i/2)}_p${i%2}`] = n; // Note underscore _p
             });
             document.getElementById('playerList').value = "";
             save(); renderAll();
@@ -207,12 +233,19 @@
 
                     let html = `<div class="match-box ${isNext ? 'next-match' : ''}">`;
                     if(done) html += `<div class="btn-reset" onclick="resetMatch('${type}',${r},${m})">↺</div>`;
+                    
                     html += [0,1].map(p => {
                         const id = `${type}_r${r}_m${m}_p${p}`;
                         const name = ev.names[id] || '--';
-                        return `<div class="player-row ${ev.status[id]==='loss'?'is-loser':''} ${ev.status[id]==='dnf'?'is-dnf':''}">
+                        const stat = ev.status[id];
+                        const showControls = name !== '--' && name !== "BYE" && !done;
+
+                        return `<div class="player-row ${stat==='loss'?'is-loser':''} ${stat==='dnf'?'is-dnf':''}">
                             <span class="p-name" onclick="slotClick('${id}')" ondblclick="editName('${id}')">${name}</span>
-                            ${(ev.names[id] && name !== '--' && !done) ? `<button class="btn-win" onclick="advance('${type}',${r},${m},${p})">➔</button>` : ''}
+                            ${showControls ? `
+                                <button class="btn-win" onclick="advance('${type}',${r},${m},${p})">➔</button>
+                                <button class="btn-dnf" onclick="triggerDNF('${type}',${r},${m},${p})">DNF</button>
+                            ` : ''}
                         </div>`;
                     }).join('');
                     roundDiv.innerHTML += html + `</div>`;
@@ -225,19 +258,21 @@
         function advance(type, r, m, p) {
             const ev = events[currentId];
             const wId = `${type}_r${r}_m${m}_p${p}`, lId = `${type}_r${r}_m${m}_p${p===0?1:0}`;
-            ev.status[wId] = 'win'; ev.status[lId] = 'loss';
+            
+            // Set status (prevent overwriting DNF with loss)
+            ev.status[wId] = 'win'; 
+            if(ev.status[lId] !== 'dnf') ev.status[lId] = 'loss';
+            
             const wName = ev.names[wId], lName = ev.names[lId];
 
             const totalR = Math.ceil(Math.log2(type==='main'?ev.count:ev.count/2));
-            
-            // Check for 3rd Place (Semifinal Loser)
             if(type === 'main' && r === totalR - 2) ev.third = lName;
 
             if (r < totalR - 1) {
                 ev.names[`${type}_r${r+1}_m${Math.floor(m/2)}_p${m%2}`] = wName;
             } else { 
                 if(type==='main') { ev.mainWinner=wName; ev.finalist=lName; } else ev.subWinner=wName;
-                confetti({particleCount:200, spread: 70, origin: {y: 0.7}});
+                confetti({particleCount:150});
             }
             
             // Drop to Redemption
@@ -247,6 +282,13 @@
             save(); renderAll();
         }
 
+        function triggerDNF(type, r, m, p) {
+            const ev = events[currentId];
+            ev.status[`${type}_r${r}_m${m}_p${p}`] = 'dnf';
+            // Opponent wins (p is 0 -> 1, 1 -> 0)
+            advance(type, r, m, p===0?1:0);
+        }
+
         function resetMatch(type, r, m) {
             const ev = events[currentId];
             delete ev.status[`${type}_r${r}_m${m}_p0`]; 
@@ -254,10 +296,16 @@
             
             const totalR = Math.ceil(Math.log2(type==='main'?ev.count:ev.count/2));
             if(r < totalR - 1) delete ev.names[`${type}_r${r+1}_m${Math.floor(m/2)}_p${m%2}`];
-            else { ev.mainWinner = null; ev.finalist = null; }
+            else { if(type==='main') { ev.mainWinner=null; ev.finalist=null; } else ev.subWinner=null; }
             
-            if(type==='main' && r===0) delete ev.names[`sub_r0_m${Math.floor(m/2)}_p${m%2}`];
-            
+            if(type==='main' && r===0) {
+                const subM = Math.floor(m/2);
+                delete ev.names[`sub_r0_m${subM}_p${m%2}`];
+                // Deep clean sub match if exists
+                if(ev.status[`sub_r0_m${subM}_p0`] || ev.status[`sub_r0_m${subM}_p1`]) {
+                    resetMatch('sub', 0, subM);
+                }
+            }
             save(); renderAll();
         }
 
@@ -280,8 +328,8 @@
 
         function slotClick(id) {
             if(wildcard) { 
-                events[currentId].names[id] = wildcard; 
-                wildcard = null; 
+                if(events[currentId].status[id]) return alert("Match bereits beendet! Erst Reset.");
+                events[currentId].names[id] = wildcard; wildcard = null; 
                 document.getElementById('wildcard-info').textContent = ""; 
                 save(); renderAll(); 
             }
@@ -291,8 +339,8 @@
             const ev = events[currentId];
             document.getElementById('p1').innerText = "🥇 " + ev.mainWinner;
             document.getElementById('p2').innerText = "🥈 " + (ev.finalist || "--");
-            document.getElementById('p3').innerText = "🥉 " + (ev.third || "--");
-            document.getElementById('podium-overlay').style.display = 'flex';
+            document.getElementById('p3').innerText = "🥉 " + (ev.subWinner || "--");
+            openOverlay('podium-overlay');
         }
 
         function updateLeague() {
@@ -306,7 +354,7 @@
             document.getElementById('league-body').innerHTML = Object.entries(s).sort((a,b)=>b[1]-a[1]).map((v,i)=>`<tr><td>#${i+1}</td><td>${v[0]}</td><td align="right"><b>${v[1]}</b></td></tr>`).join('');
         }
 
-        function exportData() { const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(events)],{type:'application/json'})); a.download='bike_battle_backup.json'; a.click(); }
+        function exportData() { const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(events)],{type:'application/json'})); a.download='backup.json'; a.click(); }
         function fullReset() { if(confirm("ALLES LÖSCHEN?")) { localStorage.clear(); location.reload(); } }
     </script>
 </body>
