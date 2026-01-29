@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Bike Battle - Race Director V26</title>
+    <title>Bike Battle - Race Director V27</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <style>
@@ -64,7 +64,6 @@
         .player-row { display: flex; align-items: center; gap: 8px; background: #27272a; padding: 8px 10px; border-radius: 6px; height: 40px; }
         .p-name { flex: 1; font-weight: 600; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
         
-        /* ACTION BUTTONS */
         .btn-win { width: 24px; height: 24px; border: none; border-radius: 4px; cursor: pointer; background: #444; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; }
         .btn-win:hover { background: var(--gold); color: #000; }
         
@@ -121,7 +120,9 @@
         </div>
         <div style="padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <button class="btn btn-sub" onclick="exportData()">💾 SAVE</button>
-            <button class="btn btn-sub" onclick="fullReset()" style="color: var(--red);">RESET</button>
+            <button class="btn btn-sub" onclick="document.getElementById('importFile').click()">📂 LOAD</button>
+            <input type="file" id="importFile" style="display:none" onchange="importData(this)">
+            <button class="btn btn-sub" style="grid-column: span 2; color:var(--red); border-color:var(--red);" onclick="fullReset()">⚠ RESET ALL</button>
         </div>
     </div>
 
@@ -157,7 +158,7 @@
 
     <script>
         let events = {}; let currentId = null; let wildcard = null;
-        const KEY = 'bike_battle_v26_complete';
+        const KEY = 'bike_battle_v27_restore';
 
         window.onload = () => {
             const s = localStorage.getItem(KEY);
@@ -209,7 +210,7 @@
 
             const ev = events[currentId];
             raw.sort(() => Math.random() - 0.5).forEach((n, i) => { 
-                ev.names[`main_r0_m${Math.floor(i/2)}_p${i%2}`] = n; // Note underscore _p
+                ev.names[`main_r0_m${Math.floor(i/2)}_p${i%2}`] = n;
             });
             document.getElementById('playerList').value = "";
             save(); renderAll();
@@ -233,7 +234,6 @@
 
                     let html = `<div class="match-box ${isNext ? 'next-match' : ''}">`;
                     if(done) html += `<div class="btn-reset" onclick="resetMatch('${type}',${r},${m})">↺</div>`;
-                    
                     html += [0,1].map(p => {
                         const id = `${type}_r${r}_m${m}_p${p}`;
                         const name = ev.names[id] || '--';
@@ -258,11 +258,8 @@
         function advance(type, r, m, p) {
             const ev = events[currentId];
             const wId = `${type}_r${r}_m${m}_p${p}`, lId = `${type}_r${r}_m${m}_p${p===0?1:0}`;
-            
-            // Set status (prevent overwriting DNF with loss)
             ev.status[wId] = 'win'; 
             if(ev.status[lId] !== 'dnf') ev.status[lId] = 'loss';
-            
             const wName = ev.names[wId], lName = ev.names[lId];
 
             const totalR = Math.ceil(Math.log2(type==='main'?ev.count:ev.count/2));
@@ -274,37 +271,26 @@
                 if(type==='main') { ev.mainWinner=wName; ev.finalist=lName; } else ev.subWinner=wName;
                 confetti({particleCount:150});
             }
-            
-            // Drop to Redemption
-            if(type === 'main' && r === 0) {
-                ev.names[`sub_r0_m${Math.floor(m/2)}_p${m%2}`] = lName;
-            }
+            if(type === 'main' && r === 0) { ev.names[`sub_r0_m${Math.floor(m/2)}_p${m%2}`] = lName; }
             save(); renderAll();
         }
 
         function triggerDNF(type, r, m, p) {
             const ev = events[currentId];
             ev.status[`${type}_r${r}_m${m}_p${p}`] = 'dnf';
-            // Opponent wins (p is 0 -> 1, 1 -> 0)
             advance(type, r, m, p===0?1:0);
         }
 
         function resetMatch(type, r, m) {
             const ev = events[currentId];
-            delete ev.status[`${type}_r${r}_m${m}_p0`]; 
-            delete ev.status[`${type}_r${r}_m${m}_p1`];
-            
+            delete ev.status[`${type}_r${r}_m${m}_p0`]; delete ev.status[`${type}_r${r}_m${m}_p1`];
             const totalR = Math.ceil(Math.log2(type==='main'?ev.count:ev.count/2));
             if(r < totalR - 1) delete ev.names[`${type}_r${r+1}_m${Math.floor(m/2)}_p${m%2}`];
             else { if(type==='main') { ev.mainWinner=null; ev.finalist=null; } else ev.subWinner=null; }
-            
             if(type==='main' && r===0) {
                 const subM = Math.floor(m/2);
                 delete ev.names[`sub_r0_m${subM}_p${m%2}`];
-                // Deep clean sub match if exists
-                if(ev.status[`sub_r0_m${subM}_p0`] || ev.status[`sub_r0_m${subM}_p1`]) {
-                    resetMatch('sub', 0, subM);
-                }
+                if(ev.status[`sub_r0_m${subM}_p0`] || ev.status[`sub_r0_m${subM}_p1`]) resetMatch('sub', 0, subM);
             }
             save(); renderAll();
         }
@@ -328,10 +314,9 @@
 
         function slotClick(id) {
             if(wildcard) { 
-                if(events[currentId].status[id]) return alert("Match bereits beendet! Erst Reset.");
+                if(events[currentId].status[id]) return alert("Match beendet!");
                 events[currentId].names[id] = wildcard; wildcard = null; 
-                document.getElementById('wildcard-info').textContent = ""; 
-                save(); renderAll(); 
+                document.getElementById('wildcard-info').textContent = ""; save(); renderAll(); 
             }
         }
 
@@ -355,6 +340,7 @@
         }
 
         function exportData() { const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(events)],{type:'application/json'})); a.download='backup.json'; a.click(); }
+        function importData(e) { const r=new FileReader(); r.onload=()=>{events=JSON.parse(r.result);save();location.reload();}; r.readAsText(e.files[0]); }
         function fullReset() { if(confirm("ALLES LÖSCHEN?")) { localStorage.clear(); location.reload(); } }
     </script>
 </body>
